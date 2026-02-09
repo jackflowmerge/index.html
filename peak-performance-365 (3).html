@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peak Performance — John Mitchell</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--black:#0a0a0a;--charcoal:#141414;--charcoal-light:#1a1a1a;--charcoal-mid:#222;--gold:#c9a84c;--gold-light:#e0c872;--gold-dim:rgba(201,168,76,0.15);--white:#f5f2ed;--gray:#6b6b6b;--gray-light:#999;--font-display:'Outfit',sans-serif;--font-mono:'Space Mono',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scrollbar-width:thin;scrollbar-color:var(--gold) var(--charcoal)}
+body{font-family:var(--font-display);background:var(--black);color:var(--white);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+.preloader{position:fixed;inset:0;z-index:9999;background:var(--black);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:28px;transition:opacity .8s ease,visibility .8s ease}
+.preloader.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.preloader-logo{animation:pp 1.5s ease infinite}
+@keyframes pp{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}}
+.preloader-bar{width:200px;height:1px;background:var(--charcoal-mid);overflow:hidden}
+.preloader-fill{height:100%;width:0;background:var(--gold);animation:pl 1.8s ease-in-out forwards}
+@keyframes pl{to{width:100%}}
+
+.cursor-dot{position:fixed;width:6px;height:6px;background:var(--gold);border-radius:50%;pointer-events:none;z-index:9998;mix-blend-mode:difference}
+.cursor-ring{position:fixed;width:36px;height:36px;border:1px solid rgba(201,168,76,.3);border-radius:50%;pointer-events:none;z-index:9998;transition:width .3s,height .3s,border-color .3s}
+.cursor-ring.hover{width:60px;height:60px;border-color:var(--gold)}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 48px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,rgba(10,10,10,.95) 0%,transparent 100%);transition:all .4s ease}
+nav.scrolled{background:rgba(10,10,10,.97);backdrop-filter:blur(20px);padding:12px 48px}
+.nav-logo{display:flex;align-items:center;gap:14px;text-decoration:none}
+.nav-logo svg{transition:all .3s}
+nav.scrolled .nav-logo svg{width:36px;height:36px}
+.nav-logo-text{font-weight:700;font-size:13px;letter-spacing:4px;text-transform:uppercase;color:var(--white);line-height:1.2}
+.nav-logo-text .accent{color:var(--gold)}
+.nav-logo-sub{font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--gray);text-transform:uppercase;margin-top:1px}
+.nav-links{display:flex;gap:32px;align-items:center}
+.nav-links a{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gray-light);text-decoration:none;transition:color .3s;font-weight:500}
+.nav-links a:hover{color:var(--gold)}
+.nav-cta{padding:10px 24px!important;border:1px solid var(--gold)!important;color:var(--gold)!important;font-family:var(--font-mono)!important;font-size:10px!important;letter-spacing:3px!important;transition:background .3s,color .3s!important}
+.nav-cta:hover{background:var(--gold)!important;color:var(--black)!important}
+.nav-hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:8px;background:none;border:none}
+.nav-hamburger span{width:24px;height:1.5px;background:var(--white)}
+
+.hero{min-height:100vh;position:relative;display:flex;align-items:center;padding:0 48px;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 70% 40%,rgba(201,168,76,.04) 0%,transparent 70%),radial-gradient(ellipse 60% 80% at 20% 80%,rgba(201,168,76,.02) 0%,transparent 60%)}
+.hero-grid-lines{position:absolute;inset:0;opacity:.03;background-image:linear-gradient(var(--gold) 1px,transparent 1px),linear-gradient(90deg,var(--gold) 1px,transparent 1px);background-size:80px 80px}
+.hero-content{position:relative;z-index:2;max-width:900px;opacity:0;transform:translateY(60px);animation:hr 1.2s ease forwards 2s}
+@keyframes hr{to{opacity:1;transform:translateY(0)}}
+.hero-tag{font-family:var(--font-mono);font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:32px;display:flex;align-items:center;gap:16px}
+.hero-tag::before{content:'';width:40px;height:1px;background:var(--gold)}
+.hero h1{font-size:clamp(48px,7vw,96px);font-weight:800;line-height:.95;letter-spacing:-2px;margin-bottom:32px}
+.hero h1 .line{display:block;overflow:hidden}
+.hero h1 .line span{display:inline-block;opacity:0;transform:translateY(100%);animation:lr .8s ease forwards}
+.hero h1 .line:nth-child(1) span{animation-delay:2.1s}
+.hero h1 .line:nth-child(2) span{animation-delay:2.25s}
+.hero h1 .line:nth-child(3) span{animation-delay:2.4s}
+@keyframes lr{to{opacity:1;transform:translateY(0)}}
+.hero h1 em{font-style:normal;color:var(--gold)}
+.hero-sub{font-size:18px;font-weight:300;color:var(--gray-light);max-width:520px;line-height:1.7;margin-bottom:48px;opacity:0;animation:hr 1s ease forwards 2.6s}
+.hero-actions{display:flex;gap:20px;align-items:center;opacity:0;animation:hr 1s ease forwards 2.8s}
+.btn-primary{padding:16px 40px;background:var(--gold);color:var(--black);font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;border:none;cursor:pointer;transition:transform .3s,box-shadow .3s;text-decoration:none;display:inline-block}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(201,168,76,.25)}
+.btn-ghost{padding:16px 32px;background:transparent;color:var(--white);font-family:var(--font-mono);font-size:11px;letter-spacing:3px;text-transform:uppercase;border:1px solid rgba(255,255,255,.15);cursor:pointer;transition:border-color .3s,color .3s;text-decoration:none}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+.hero-scroll{position:absolute;bottom:48px;left:48px;display:flex;align-items:center;gap:16px;opacity:0;animation:hr 1s ease forwards 3.2s}
+.hero-scroll-line{width:1px;height:60px;background:var(--charcoal-mid);position:relative;overflow:hidden}
+.hero-scroll-line::after{content:'';position:absolute;top:-100%;left:0;width:100%;height:100%;background:var(--gold);animation:sp 2s ease infinite}
+@keyframes sp{0%{top:-100%}50%{top:100%}100%{top:100%}}
+.hero-scroll span{font-family:var(--font-mono);font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gray);writing-mode:vertical-rl}
+.hero-stats{position:absolute;right:48px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:48px;opacity:0;animation:hr 1s ease forwards 3s}
+.hero-stat{text-align:right}
+.hero-stat-num{font-size:48px;font-weight:800;color:var(--gold);line-height:1}
+.hero-stat-label{font-family:var(--font-mono);font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gray);margin-top:4px}
+
+section{padding:140px 48px;position:relative}
+.section-tag{font-family:var(--font-mono);font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:24px;display:flex;align-items:center;gap:16px}
+.section-tag::before{content:'';width:24px;height:1px;background:var(--gold)}
+.section-heading{font-size:clamp(32px,4.5vw,60px);font-weight:700;line-height:1.1;letter-spacing:-1px;margin-bottom:24px}
+.section-heading em{font-style:normal;color:var(--gold)}
+.section-sub{font-size:17px;font-weight:300;color:var(--gray-light);line-height:1.7;max-width:560px}
+.reveal{opacity:0;transform:translateY(48px);transition:opacity .9s ease,transform .9s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-delay-1{transition-delay:.1s}.reveal-delay-2{transition-delay:.2s}.reveal-delay-3{transition-delay:.3s}
+.divider{height:1px;margin:0 48px;background:linear-gradient(90deg,transparent 0%,var(--charcoal-mid) 20%,var(--gold-dim) 50%,var(--charcoal-mid) 80%,transparent 100%)}
+
+.philosophy-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;margin-top:80px;align-items:start}
+.philosophy-left{position:sticky;top:160px}
+.pillar{padding:40px 0;border-bottom:1px solid var(--charcoal-mid);transition:border-color .4s;cursor:default}
+.pillar:first-child{border-top:1px solid var(--charcoal-mid)}
+.pillar:hover{border-color:rgba(201,168,76,.3)}
+.pillar-header{display:flex;align-items:center;gap:20px;margin-bottom:12px}
+.pillar-num{font-family:var(--font-mono);font-size:10px;color:var(--gold);letter-spacing:2px}
+.pillar-title{font-size:22px;font-weight:600;letter-spacing:-.5px;transition:color .3s}
+.pillar:hover .pillar-title{color:var(--gold)}
+.pillar-desc{font-size:15px;color:var(--gray-light);line-height:1.7;font-weight:300;padding-left:52px;max-height:0;overflow:hidden;opacity:0;transition:max-height .5s,opacity .4s,margin .4s}
+.pillar:hover .pillar-desc{max-height:120px;opacity:1;margin-top:8px}
+
+.credentials{background:var(--charcoal);position:relative;overflow:hidden}
+.credentials-bg-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:clamp(100px,18vw,260px);font-weight:800;color:rgba(255,255,255,.015);white-space:nowrap;pointer-events:none;letter-spacing:-4px}
+.credentials-content{display:grid;grid-template-columns:1fr 1fr;gap:80px;position:relative;z-index:2}
+.credentials-text blockquote{font-size:26px;font-weight:300;line-height:1.6;color:var(--white);margin-top:40px;padding-left:24px;border-left:2px solid var(--gold)}
+.credentials-metrics{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-content:center}
+.metric-card{background:rgba(255,255,255,.02);border:1px solid var(--charcoal-mid);padding:36px;position:relative;transition:border-color .4s,transform .3s}
+.metric-card:hover{border-color:rgba(201,168,76,.3);transform:translateY(-4px)}
+.metric-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--gold),transparent);opacity:0;transition:opacity .4s}
+.metric-card:hover::before{opacity:1}
+.metric-num{font-size:42px;font-weight:800;color:var(--gold);line-height:1;margin-bottom:8px}
+.metric-label{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gray-light)}
+
+.steps-track{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:80px;position:relative}
+.steps-track::before{content:'';position:absolute;top:40px;left:16.66%;right:16.66%;height:1px;background:var(--charcoal-mid)}
+.step{text-align:center;padding:0 40px;position:relative}
+.step-icon{width:80px;height:80px;margin:0 auto 32px;border:1px solid var(--charcoal-mid);border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--black);position:relative;z-index:2;transition:border-color .4s,box-shadow .4s}
+.step:hover .step-icon{border-color:var(--gold);box-shadow:0 0 40px rgba(201,168,76,.1)}
+.step-num{font-family:var(--font-mono);font-size:22px;font-weight:700;color:var(--gold)}
+.step-title{font-size:20px;font-weight:600;margin-bottom:12px}
+.step-desc{font-size:14px;color:var(--gray-light);line-height:1.7;font-weight:300}
+
+.video-library{background:var(--charcoal)}
+.video-filters{display:flex;gap:8px;margin-top:48px;margin-bottom:40px;flex-wrap:wrap}
+.video-filter{padding:10px 20px;background:transparent;border:1px solid var(--charcoal-mid);color:var(--gray-light);font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .3s}
+.video-filter:hover,.video-filter.active{border-color:var(--gold);color:var(--gold);background:var(--gold-dim)}
+.video-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.video-card{position:relative;aspect-ratio:9/16;background:var(--charcoal-light);border:1px solid rgba(255,255,255,.04);overflow:hidden;cursor:pointer;transition:transform .4s,border-color .4s}
+.video-card:hover{transform:translateY(-6px);border-color:rgba(201,168,76,.3)}
+.video-card video,.video-card-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.video-card-bg{background:linear-gradient(135deg,var(--charcoal-light),var(--charcoal));display:flex;align-items:center;justify-content:center}
+.video-card-play{width:48px;height:48px;border-radius:50%;border:1.5px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;transition:all .3s;position:relative;z-index:3}
+.video-card:hover .video-card-play{border-color:var(--gold);transform:scale(1.1);box-shadow:0 0 30px rgba(201,168,76,.2)}
+.video-card-play svg{width:16px;height:16px;fill:var(--white);margin-left:2px;transition:fill .3s}
+.video-card:hover .video-card-play svg{fill:var(--gold)}
+.video-card-info{position:absolute;bottom:0;left:0;right:0;padding:24px 16px;z-index:4;background:linear-gradient(transparent,rgba(0,0,0,.85))}
+.video-card-tag{font-family:var(--font-mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.video-card-title{font-size:14px;font-weight:600;line-height:1.4}
+.video-card-duration{font-family:var(--font-mono);font-size:10px;color:var(--gray);margin-top:8px}
+.video-card-overlay{position:absolute;inset:0;background:rgba(201,168,76,.05);opacity:0;transition:opacity .4s;z-index:2}
+.video-card:hover .video-card-overlay{opacity:1}
+
+.results-section{background:var(--black);overflow:hidden}
+.results-intro{display:grid;grid-template-columns:1fr 1fr;gap:80px;margin-bottom:80px;align-items:end}
+.results-intro-right{text-align:right}
+.results-stat-big{font-size:clamp(64px,8vw,120px);font-weight:800;color:var(--gold);line-height:.9}
+.results-stat-label{font-family:var(--font-mono);font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gray-light);margin-top:8px}
+.results-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.result-card{position:relative;overflow:hidden;border:1px solid var(--charcoal-mid);transition:border-color .4s,transform .4s;background:var(--charcoal-light)}
+.result-card:hover{border-color:rgba(201,168,76,.4);transform:translateY(-4px)}
+.result-card-images{display:grid;grid-template-columns:1fr 1fr;aspect-ratio:16/10;overflow:hidden;position:relative}
+.result-card-before,.result-card-after{position:relative;overflow:hidden;background:var(--charcoal)}
+.result-card-before img,.result-card-after img{width:100%;height:100%;object-fit:cover;transition:transform .6s}
+.result-card:hover img{transform:scale(1.05)}
+.result-card-before::after,.result-card-after::after{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-family:var(--font-mono);font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);padding:4px 8px;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)}
+.result-card-before::after{content:'Before'}
+.result-card-after::after{content:'After'}
+.result-card-divider{position:absolute;top:0;left:50%;width:2px;height:100%;transform:translateX(-50%);background:var(--gold);opacity:.4;z-index:2}
+.result-card-info{padding:24px}
+.result-card-name{font-size:16px;font-weight:600;margin-bottom:4px}
+.result-card-detail{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:12px}
+.result-card-quote{font-size:13px;color:var(--gray-light);line-height:1.6;font-weight:300;font-style:italic}
+.result-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--charcoal),var(--charcoal-light));color:var(--gray);font-family:var(--font-mono);font-size:9px;letter-spacing:2px;text-transform:uppercase}
+
+.testimonials{background:var(--charcoal)}
+.testimonials-marquee{display:flex;gap:32px;margin-top:64px;animation:mq 40s linear infinite;width:max-content}
+.testimonials-marquee:hover{animation-play-state:paused}
+@keyframes mq{to{transform:translateX(-50%)}}
+.testimonial-card{min-width:400px;padding:40px;border:1px solid var(--charcoal-mid);background:rgba(255,255,255,.01);flex-shrink:0;transition:border-color .3s}
+.testimonial-card:hover{border-color:rgba(201,168,76,.3)}
+.testimonial-stars{display:flex;gap:4px;margin-bottom:20px}
+.testimonial-star{color:var(--gold);font-size:14px}
+.testimonial-text{font-size:15px;font-weight:300;line-height:1.8;color:var(--gray-light);margin-bottom:24px}
+.testimonial-author{display:flex;align-items:center;gap:12px}
+.testimonial-avatar{width:40px;height:40px;border-radius:50%;background:var(--charcoal-mid);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--gold)}
+.testimonial-name{font-size:13px;font-weight:600}
+.testimonial-detail{font-size:11px;color:var(--gray);font-family:var(--font-mono);letter-spacing:1px}
+
+.cta-section{background:var(--black);text-align:center;padding:160px 48px;position:relative;overflow:hidden}
+.cta-glow{position:absolute;top:50%;left:50%;width:600px;height:600px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(201,168,76,.06) 0%,transparent 70%);pointer-events:none}
+.cta-logo{margin:0 auto 40px;opacity:.8}
+.cta-section .section-heading{max-width:700px;margin:0 auto 24px}
+.cta-section .section-sub{max-width:480px;margin:0 auto 48px}
+.cta-features{display:flex;justify-content:center;gap:48px;margin-bottom:56px}
+.cta-feature{display:flex;align-items:center;gap:10px;font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gray-light)}
+.cta-feature-dot{width:6px;height:6px;background:var(--gold);border-radius:50%}
+
+footer{padding:64px 48px 32px;border-top:1px solid var(--charcoal-mid)}
+.footer-top{display:flex;justify-content:space-between;align-items:start;margin-bottom:64px}
+.footer-brand{display:flex;flex-direction:column;gap:16px}
+.footer-brand-logo{display:flex;align-items:center;gap:14px}
+.footer-brand-logo span{font-weight:700;font-size:13px;letter-spacing:4px;text-transform:uppercase}
+.footer-brand-logo .accent{color:var(--gold)}
+.footer-tagline{font-size:14px;color:var(--gray);font-weight:300;max-width:300px;line-height:1.6}
+.footer-links-group h4{font-family:var(--font-mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:20px}
+.footer-links-group a{display:block;font-size:14px;color:var(--gray-light);text-decoration:none;margin-bottom:12px;transition:color .3s;font-weight:300}
+.footer-links-group a:hover{color:var(--gold)}
+.footer-bottom{display:flex;justify-content:space-between;align-items:center;padding-top:32px;border-top:1px solid var(--charcoal-mid)}
+.footer-copy{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;color:var(--gray)}
+.footer-socials{display:flex;gap:20px}
+.footer-social{width:36px;height:36px;border:1px solid var(--charcoal-mid);display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--gray-light);font-size:14px;transition:all .3s}
+.footer-social:hover{border-color:var(--gold);color:var(--gold)}
+
+@media(max-width:1024px){
+  nav{padding:16px 24px}.nav-links{display:none}.nav-hamburger{display:flex}
+  section{padding:100px 24px}.hero{padding:0 24px}.hero-stats{display:none}.hero-scroll{left:24px}
+  .philosophy-grid,.credentials-content,.results-intro{grid-template-columns:1fr;gap:48px}
+  .philosophy-left{position:static}.steps-track{grid-template-columns:1fr;gap:48px}.steps-track::before{display:none}
+  .video-grid{grid-template-columns:repeat(2,1fr)}.results-grid{grid-template-columns:repeat(2,1fr)}
+  .results-intro-right{text-align:left}.divider{margin:0 24px}.footer-top{flex-direction:column;gap:40px}
+  .cta-features{flex-wrap:wrap;gap:24px}
+}
+@media(max-width:640px){
+  .hero h1{font-size:40px}.hero-actions{flex-direction:column;align-items:start}
+  .video-grid{grid-template-columns:1fr 1fr}.results-grid{grid-template-columns:1fr}
+  .credentials-metrics{grid-template-columns:1fr}.testimonial-card{min-width:300px}
+  .cursor-dot,.cursor-ring{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- Inline SVG Logo (reusable) -->
+<svg style="display:none">
+  <defs>
+    <!-- Full logo with text -->
+    <symbol id="logo-full" viewBox="0 0 200 200">
+      <polygon points="60,8 140,8 192,60 192,140 140,192 60,192 8,140 8,60" stroke="#c9a84c" stroke-width="2.5" fill="none"/>
+      <polygon points="56,13 144,13 194,56 194,144 144,194 56,194 6,144 6,56" stroke="rgba(201,168,76,0.25)" stroke-width="1" fill="none"/>
+      <polygon points="42,130 78,68 98,104 118,52 155,130" fill="none" stroke="#c9a84c" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <polygon points="115,130 138,88 162,130" fill="none" stroke="rgba(201,168,76,0.4)" stroke-width="1.5" stroke-linejoin="round"/>
+      <text x="100" y="158" text-anchor="middle" font-family="Outfit,sans-serif" font-size="16" font-weight="700" letter-spacing="4" fill="#c9a84c">PEAK</text>
+      <text x="100" y="174" text-anchor="middle" font-family="Outfit,sans-serif" font-size="7.5" font-weight="400" letter-spacing="3.5" fill="rgba(201,168,76,0.55)">PERFORMANCE</text>
+    </symbol>
+    <!-- Icon only (no text) for nav -->
+    <symbol id="logo-icon" viewBox="0 0 200 200">
+      <polygon points="60,8 140,8 192,60 192,140 140,192 60,192 8,140 8,60" stroke="#c9a84c" stroke-width="3.5" fill="none"/>
+      <polygon points="56,13 144,13 194,56 194,144 144,194 56,194 6,144 6,56" stroke="rgba(201,168,76,0.2)" stroke-width="1" fill="none"/>
+      <polygon points="38,140 78,62 100,105 122,48 162,140" fill="none" stroke="#c9a84c" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <polygon points="118,140 142,85 166,140" fill="none" stroke="rgba(201,168,76,0.35)" stroke-width="2" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- Preloader -->
+<div class="preloader" id="preloader">
+  <div class="preloader-logo"><svg width="80" height="80"><use href="#logo-full"/></svg></div>
+  <div class="preloader-bar"><div class="preloader-fill"></div></div>
+</div>
+
+<!-- Cursor -->
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- Nav -->
+<nav id="navbar">
+  <a href="#" class="nav-logo">
+    <svg width="44" height="44"><use href="#logo-icon"/></svg>
+    <div>
+      <div class="nav-logo-text">PEAK <span class="accent">PERFORMANCE</span></div>
+      <div class="nav-logo-sub">By John Mitchell</div>
+    </div>
+  </a>
+  <div class="nav-links">
+    <a href="#philosophy">Philosophy</a>
+    <a href="#method">Method</a>
+    <a href="#library">Library</a>
+    <a href="#transformations">Results</a>
+    <a href="#start" class="nav-cta">Start Now</a>
+  </div>
+  <button class="nav-hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid-lines"></div>
+  <div class="hero-content">
+    <div class="hero-tag">Online Coaching — By John Mitchell</div>
+    <h1>
+      <div class="line"><span>Structure Beats</span></div>
+      <div class="line"><span><em>Motivation.</em></span></div>
+      <div class="line"><span>Every Time.</span></div>
+    </h1>
+    <p class="hero-sub">Elite-level coaching built on real fight experience, real science, and real accountability. No hype. No shortcuts. Just the system that works — 365 days a year.</p>
+    <div class="hero-actions">
+      <a href="#start" class="btn-primary">Begin Your Programme</a>
+      <a href="#library" class="btn-ghost">Explore Library</a>
+    </div>
+  </div>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="hero-stat-num" data-count="10">0</div><div class="hero-stat-label">Pro MMA Wins</div></div>
+    <div class="hero-stat"><div class="hero-stat-num" data-count="365">0</div><div class="hero-stat-label">Days Support</div></div>
+    <div class="hero-stat"><div class="hero-stat-num" data-count="24">0</div><div class="hero-stat-label">/7 Access</div></div>
+  </div>
+  <div class="hero-scroll"><div class="hero-scroll-line"></div><span>Scroll</span></div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Philosophy -->
+<section id="philosophy">
+  <div class="reveal">
+    <div class="section-tag">Philosophy</div>
+    <div class="section-heading">Real coaching in an industry<br>built on <em>bullshit.</em></div>
+    <p class="section-sub">Most online coaches sell motivation. John Mitchell builds systems. There's a difference — and you'll feel it in every session, every check-in, every result.</p>
+  </div>
+  <div class="philosophy-grid">
+    <div class="philosophy-left reveal reveal-delay-2">
+      <div class="philosophy-pillars">
+        <div class="pillar"><div class="pillar-header"><span class="pillar-num">01</span><span class="pillar-title">Structure Over Motivation</span></div><p class="pillar-desc">Motivation fades. Systems don't. Every programme is built around your life, not around an idealised version of it that doesn't exist.</p></div>
+        <div class="pillar"><div class="pillar-header"><span class="pillar-num">02</span><span class="pillar-title">Sustainability Over Extremes</span></div><p class="pillar-desc">No crash diets. No 6am sessions you'll quit in a month. Just intelligent programming you can maintain for years — and actually want to.</p></div>
+        <div class="pillar"><div class="pillar-header"><span class="pillar-num">03</span><span class="pillar-title">Honesty Over Hype</span></div><p class="pillar-desc">John tells you what you need to hear, not what you want to hear. That's how elite athletes improve — and it's how you will too.</p></div>
+        <div class="pillar"><div class="pillar-header"><span class="pillar-num">04</span><span class="pillar-title">Performance For Real People</span></div><p class="pillar-desc">Professional-grade knowledge adapted for real schedules, real bodies, and real goals. You don't need to be an athlete to train like one.</p></div>
+      </div>
+    </div>
+    <div class="credentials-metrics reveal reveal-delay-3">
+      <div class="metric-card"><div class="metric-num">10–3</div><div class="metric-label">Pro MMA Record</div></div>
+      <div class="metric-card"><div class="metric-num">8+</div><div class="metric-label">Years Coaching</div></div>
+      <div class="metric-card"><div class="metric-num">24/7</div><div class="metric-label">Client Support</div></div>
+      <div class="metric-card"><div class="metric-num">365</div><div class="metric-label">Days Committed</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Credentials -->
+<section class="credentials" id="about">
+  <div class="credentials-bg-text">MITCHELL</div>
+  <div class="credentials-content">
+    <div class="credentials-text reveal">
+      <div class="section-tag">The Coach</div>
+      <div class="section-heading">Forged in the cage.<br>Built to <em>coach.</em></div>
+      <blockquote>"I've been in rounds where quitting felt logical. That taught me more about coaching than any certification ever could."</blockquote>
+    </div>
+    <div class="reveal reveal-delay-2" style="display:flex;flex-direction:column;justify-content:center">
+      <p class="section-sub" style="max-width:100%;margin-bottom:24px">John Mitchell isn't a social media coach who learned from YouTube. He's a professional fighter with a 10–3 record who has lived every principle he teaches.</p>
+      <p class="section-sub" style="max-width:100%;margin-bottom:24px">His specialism in cardio conditioning and performance training comes from years of preparing his own body for the most demanding sport on earth — and adapting that knowledge for anyone willing to commit.</p>
+      <p class="section-sub" style="max-width:100%">With Peak Performance, you get direct access. Not a chatbot. Not a PDF plan. John — available around the clock, invested in your progress.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Method -->
+<section id="method">
+  <div class="reveal">
+    <div class="section-tag">The Method</div>
+    <div class="section-heading">From where you are<br>to where you <em>perform.</em></div>
+    <p class="section-sub">Three phases. No gimmicks. A clear path from your current state to sustained, measurable performance.</p>
+  </div>
+  <div class="steps-track">
+    <div class="step reveal reveal-delay-1"><div class="step-icon"><span class="step-num">01</span></div><h3 class="step-title">Assess</h3><p class="step-desc">Full intake consultation. We analyse your current fitness, your goals, your schedule, your history. No assumptions — just data and honest conversation.</p></div>
+    <div class="step reveal reveal-delay-2"><div class="step-icon"><span class="step-num">02</span></div><h3 class="step-title">Build</h3><p class="step-desc">A bespoke programme designed around your life. Training, conditioning, cardio — structured for sustainability, not for Instagram posts.</p></div>
+    <div class="step reveal reveal-delay-3"><div class="step-icon"><span class="step-num">03</span></div><h3 class="step-title">Evolve</h3><p class="step-desc">Ongoing coaching, adaptation, and 24/7 support. Your programme grows as you do. Weekly check-ins. Real accountability. Continuous improvement.</p></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Video Library -->
+<section class="video-library" id="library">
+  <div class="reveal">
+    <div class="section-tag">Knowledge Hub</div>
+    <div class="section-heading">Straight talk.<br><em>Zero filler.</em></div>
+    <p class="section-sub">Short, direct training insights from John. Real knowledge from real experience — not content made to fill a feed.</p>
+  </div>
+  <div class="video-filters reveal reveal-delay-1">
+    <button class="video-filter active" data-filter="all">All</button>
+    <button class="video-filter" data-filter="cardio">Cardio</button>
+    <button class="video-filter" data-filter="strength">Strength</button>
+    <button class="video-filter" data-filter="conditioning">Conditioning</button>
+    <button class="video-filter" data-filter="mindset">Mindset</button>
+    <button class="video-filter" data-filter="nutrition">Nutrition</button>
+  </div>
+  <div class="video-grid reveal reveal-delay-2">
+    <div class="video-card" data-category="cardio"><div class="video-card-bg"><div class="video-card-play"><svg viewBox="0 0 24 24"><polygon points="8,5 20,12 8,19"/></svg></div></div><div class="video-card-overlay"></div><div class="video-card-info"><div class="video-card-tag">Cardio</div><div class="video-card-title">Why Your Cardio Isn't Working</div><div class="video-card-duration">2:34</div></div></div>
+    <div class="video-card" data-category="strength"><div class="video-card-bg"><div class="video-card-play"><svg viewBox="0 0 24 24"><polygon points="8,5 20,12 8,19"/></svg></div></div><div class="video-card-overlay"></div><div class="video-card-info"><div class="video-card-tag">Strength</div><div class="video-card-title">Progressive Overload — Explained Simply</div><div class="video-card-duration">3:12</div></div></div>
+    <div class="video-card" data-category="mindset"><div class="video-card-bg"><div class="video-card-play"><svg viewBox="0 0 24 24"><polygon points="8,5 20,12 8,19"/></svg></div></div><div class="video-card-overlay"></div><div class="video-card-info"><div class="video-card-tag">Mindset</div><div class="video-card-title">Discipline Is Not What You Think It Is</div><div class="video-card-duration">1:58</div></div></div>
+    <div class="video-card" data-category="conditioning"><div class="video-card-bg"><div class="video-card-play"><svg viewBox="0 0 24 24"><polygon points="8,5 20,12 8,19"/></svg></div></div><div class="video-card-overlay"></div><div class="video-card-info"><div class="video-card-tag">Conditioning</div><div class="video-card-title">Fight-Ready Conditioning for Non-Fighters</div><div class="video-card-duration">4:01</div></div></div>
+    <div class="video-card" data-category="cardio"><div class="video-card-bg"><div class="video-card-play"><svg viewBox="0 0 24 24"><polygon points="8,5 20,12 8,19"/></svg></div></div><div class="video-card-overlay"></div><div class="video-card-info"><div class="video-card-tag">Cardio</div><div class="video-card-title">Zone 2 Training — The Real Foundation</div><div class="video-card-duration">3:45</div></div></div>
+    <div class="video-card" data-category="nutrition"><div class="video-card-bg"><div class="video-card-play"><svg viewBox="0 0 24 24"><polygon points="8,5 20,12 8,19"/></svg></div></div><div class="video-card-overlay"></div><div class="video-card-info"><div class="video-card-tag">Nutrition</div><div class="video-card-title">Stop Overcomplicating Your Diet</div><div class="video-card-duration">2:15</div></div></div>
+    <div class="video-card" data-category="strength"><div class="video-card-bg"><div class="video-card-play"><svg viewBox="0 0 24 24"><polygon points="8,5 20,12 8,19"/></svg></div></div><div class="video-card-overlay"></div><div class="video-card-info"><div class="video-card-tag">Strength</div><div class="video-card-title">The Only 5 Movements You Need</div><div class="video-card-duration">3:28</div></div></div>
+    <div class="video-card" data-category="mindset"><div class="video-card-bg"><div class="video-card-play"><svg viewBox="0 0 24 24"><polygon points="8,5 20,12 8,19"/></svg></div></div><div class="video-card-overlay"></div><div class="video-card-info"><div class="video-card-tag">Mindset</div><div class="video-card-title">What Fighting Taught Me About Consistency</div><div class="video-card-duration">2:50</div></div></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Transformations -->
+<section class="results-section" id="transformations">
+  <div class="results-intro">
+    <div class="reveal">
+      <div class="section-tag">Transformations</div>
+      <div class="section-heading">The work speaks<br>for <em>itself.</em></div>
+      <p class="section-sub">Real clients. Real timelines. No filters, no lighting tricks, no deceptive angles. Just consistent structure producing consistent results.</p>
+    </div>
+    <div class="results-intro-right reveal reveal-delay-2">
+      <div class="results-stat-big">100%</div>
+      <div class="results-stat-label">Commitment Required</div>
+    </div>
+  </div>
+  <div class="results-grid">
+    <div class="result-card reveal reveal-delay-1"><div class="result-card-images"><div class="result-card-before"><div class="result-placeholder">Before</div></div><div class="result-card-divider"></div><div class="result-card-after"><div class="result-placeholder">After</div></div></div><div class="result-card-info"><div class="result-card-name">Client Name</div><div class="result-card-detail">12 Week Programme</div><div class="result-card-quote">"Add client quote here."</div></div></div>
+    <div class="result-card reveal reveal-delay-2"><div class="result-card-images"><div class="result-card-before"><div class="result-placeholder">Before</div></div><div class="result-card-divider"></div><div class="result-card-after"><div class="result-placeholder">After</div></div></div><div class="result-card-info"><div class="result-card-name">Client Name</div><div class="result-card-detail">6 Month Programme</div><div class="result-card-quote">"Add client quote here."</div></div></div>
+    <div class="result-card reveal reveal-delay-3"><div class="result-card-images"><div class="result-card-before"><div class="result-placeholder">Before</div></div><div class="result-card-divider"></div><div class="result-card-after"><div class="result-placeholder">After</div></div></div><div class="result-card-info"><div class="result-card-name">Client Name</div><div class="result-card-detail">8 Month Programme</div><div class="result-card-quote">"Add client quote here."</div></div></div>
+    <div class="result-card reveal reveal-delay-1"><div class="result-card-images"><div class="result-card-before"><div class="result-placeholder">Before</div></div><div class="result-card-divider"></div><div class="result-card-after"><div class="result-placeholder">After</div></div></div><div class="result-card-info"><div class="result-card-name">Client Name</div><div class="result-card-detail">16 Week Programme</div><div class="result-card-quote">"Add client quote here."</div></div></div>
+    <div class="result-card reveal reveal-delay-2"><div class="result-card-images"><div class="result-card-before"><div class="result-placeholder">Before</div></div><div class="result-card-divider"></div><div class="result-card-after"><div class="result-placeholder">After</div></div></div><div class="result-card-info"><div class="result-card-name">Client Name</div><div class="result-card-detail">1 Year Programme</div><div class="result-card-quote">"Add client quote here."</div></div></div>
+    <div class="result-card reveal reveal-delay-3"><div class="result-card-images"><div class="result-card-before"><div class="result-placeholder">Before</div></div><div class="result-card-divider"></div><div class="result-card-after"><div class="result-placeholder">After</div></div></div><div class="result-card-info"><div class="result-card-name">Client Name</div><div class="result-card-detail">10 Week Programme</div><div class="result-card-quote">"Add client quote here."</div></div></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Testimonials -->
+<section class="testimonials">
+  <div class="reveal">
+    <div class="section-tag">Testimonials</div>
+    <div class="section-heading">Don't take his word for it.<br>Take <em>theirs.</em></div>
+  </div>
+  <div class="testimonials-marquee">
+    <div class="testimonial-card"><div class="testimonial-stars"><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span></div><p class="testimonial-text">"I've had three different online coaches before John. They gave me PDFs and disappeared. John checks in, adjusts my programme, and actually gives a shit. First coach I've stuck with past three months."</p><div class="testimonial-author"><div class="testimonial-avatar">D</div><div><div class="testimonial-name">David K.</div><div class="testimonial-detail">6 months coaching</div></div></div></div>
+    <div class="testimonial-card"><div class="testimonial-stars"><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span></div><p class="testimonial-text">"The cardio programming alone changed everything. I thought I was fit. John showed me I was doing cardio wrong for years. My conditioning is on another level now."</p><div class="testimonial-author"><div class="testimonial-avatar">S</div><div><div class="testimonial-name">Sarah M.</div><div class="testimonial-detail">10 months coaching</div></div></div></div>
+    <div class="testimonial-card"><div class="testimonial-stars"><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span></div><p class="testimonial-text">"John's honest. Sometimes brutally. But that's exactly what I needed. No sugar-coating, just clear direction and a system I can actually follow with a full-time job and two kids."</p><div class="testimonial-author"><div class="testimonial-avatar">R</div><div><div class="testimonial-name">Ronan T.</div><div class="testimonial-detail">1 year coaching</div></div></div></div>
+    <div class="testimonial-card"><div class="testimonial-stars"><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span></div><p class="testimonial-text">"I came to John wanting to lose weight. He gave me that — and a complete understanding of how to train properly. The education alone is worth it. I'll never go back to guessing."</p><div class="testimonial-author"><div class="testimonial-avatar">E</div><div><div class="testimonial-name">Emma L.</div><div class="testimonial-detail">8 months coaching</div></div></div></div>
+    <div class="testimonial-card"><div class="testimonial-stars"><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span></div><p class="testimonial-text">"I've had three different online coaches before John. They gave me PDFs and disappeared. John checks in, adjusts my programme, and actually gives a shit. First coach I've stuck with past three months."</p><div class="testimonial-author"><div class="testimonial-avatar">D</div><div><div class="testimonial-name">David K.</div><div class="testimonial-detail">6 months coaching</div></div></div></div>
+    <div class="testimonial-card"><div class="testimonial-stars"><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span></div><p class="testimonial-text">"The cardio programming alone changed everything. I thought I was fit. John showed me I was doing cardio wrong for years. My conditioning is on another level now."</p><div class="testimonial-author"><div class="testimonial-avatar">S</div><div><div class="testimonial-name">Sarah M.</div><div class="testimonial-detail">10 months coaching</div></div></div></div>
+    <div class="testimonial-card"><div class="testimonial-stars"><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span></div><p class="testimonial-text">"John's honest. Sometimes brutally. But that's exactly what I needed. No sugar-coating, just clear direction and a system I can actually follow with a full-time job and two kids."</p><div class="testimonial-author"><div class="testimonial-avatar">R</div><div><div class="testimonial-name">Ronan T.</div><div class="testimonial-detail">1 year coaching</div></div></div></div>
+    <div class="testimonial-card"><div class="testimonial-stars"><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span><span class="testimonial-star">★</span></div><p class="testimonial-text">"I came to John wanting to lose weight. He gave me that — and a complete understanding of how to train properly. The education alone is worth it. I'll never go back to guessing."</p><div class="testimonial-author"><div class="testimonial-avatar">E</div><div><div class="testimonial-name">Emma L.</div><div class="testimonial-detail">8 months coaching</div></div></div></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- CTA -->
+<section class="cta-section" id="start">
+  <div class="cta-glow"></div>
+  <div class="cta-logo"><svg width="100" height="100"><use href="#logo-full"/></svg></div>
+  <div class="reveal">
+    <div class="section-tag" style="justify-content:center">Start Today</div>
+    <div class="section-heading">Ready to stop guessing<br>and start <em>performing?</em></div>
+    <p class="section-sub">Limited spots available. John works with a small roster to guarantee the quality of coaching every client deserves.</p>
+  </div>
+  <div class="cta-features reveal reveal-delay-1">
+    <div class="cta-feature"><span class="cta-feature-dot"></span>Bespoke Programme</div>
+    <div class="cta-feature"><span class="cta-feature-dot"></span>24/7 Support</div>
+    <div class="cta-feature"><span class="cta-feature-dot"></span>Weekly Check-ins</div>
+    <div class="cta-feature"><span class="cta-feature-dot"></span>Video Library Access</div>
+  </div>
+  <div class="reveal reveal-delay-2"><a href="#" class="btn-primary">Apply For Coaching</a></div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="footer-brand-logo"><svg width="48" height="48"><use href="#logo-icon"/></svg><span>PEAK <span class="accent">PERFORMANCE</span></span></div>
+      <p class="footer-tagline">Elite-level coaching. Real results. Every day of the year.</p>
+    </div>
+    <div class="footer-links-group"><h4>Navigate</h4><a href="#philosophy">Philosophy</a><a href="#method">Method</a><a href="#library">Video Library</a><a href="#transformations">Transformations</a></div>
+    <div class="footer-links-group"><h4>Connect</h4><a href="#">Instagram</a><a href="#">YouTube</a><a href="#">Email John</a></div>
+    <div class="footer-links-group"><h4>Legal</h4><a href="#">Privacy Policy</a><a href="#">Terms of Service</a></div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">&copy; 2026 Peak Performance. All Rights Reserved.</span>
+    <div class="footer-socials"><a href="#" class="footer-social">IG</a><a href="#" class="footer-social">YT</a><a href="#" class="footer-social">TW</a></div>
+  </div>
+</footer>
+
+<script>
+window.addEventListener('load',()=>{setTimeout(()=>document.getElementById('preloader').classList.add('hidden'),2000)});
+const dot=document.getElementById('cursorDot'),ring=document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;dot.style.left=mx-3+'px';dot.style.top=my-3+'px'});
+function ar(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx-18+'px';ring.style.top=ry-18+'px';requestAnimationFrame(ar)}ar();
+document.querySelectorAll('a,button,.video-card,.metric-card,.pillar,.result-card').forEach(el=>{el.addEventListener('mouseenter',()=>ring.classList.add('hover'));el.addEventListener('mouseleave',()=>ring.classList.remove('hover'))});
+window.addEventListener('scroll',()=>{document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>80)});
+const obs=new IntersectionObserver(e=>{e.forEach(en=>{if(en.isIntersecting)en.target.classList.add('visible')})},{threshold:.12,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+const co=new IntersectionObserver(e=>{e.forEach(en=>{if(en.isIntersecting){const el=en.target,t=parseInt(el.dataset.count),d=1500,s=performance.now();function tick(n){const p=Math.min((n-s)/d,1);el.textContent=Math.round((1-Math.pow(1-p,3))*t);if(p<1)requestAnimationFrame(tick)}requestAnimationFrame(tick);co.unobserve(el)}})},{threshold:.5});
+document.querySelectorAll('[data-count]').forEach(el=>co.observe(el));
+document.querySelectorAll('.video-filter').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.video-filter').forEach(b=>b.classList.remove('active'));btn.classList.add('active');const f=btn.dataset.filter;document.querySelectorAll('.video-card').forEach((c,i)=>{const s=f==='all'||c.dataset.category===f;if(s){c.style.display='';c.style.opacity='0';c.style.transform='translateY(20px)';setTimeout(()=>{c.style.transition='opacity .4s,transform .4s';c.style.opacity='1';c.style.transform='translateY(0)'},50+i*30)}else{c.style.display='none'}})})});
+document.querySelectorAll('.video-card').forEach(c=>{const v=c.querySelector('video');if(v){c.addEventListener('mouseenter',()=>{v.currentTime=0;v.play()});c.addEventListener('mouseleave',()=>v.pause())}});
+window.addEventListener('scroll',()=>{const g=document.querySelector('.hero-grid-lines');if(g)g.style.transform='translateY('+window.scrollY*.15+'px)'});
+document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',function(e){e.preventDefault();const t=document.querySelector(this.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'})})});
+</script>
+</body>
+</html>
